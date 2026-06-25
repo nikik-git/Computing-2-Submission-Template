@@ -1,107 +1,122 @@
 import R from "./ramda.js";
-import {CardAssets, StateManager} from "./memory_card.js";
+import {gameState, isMatch, shuffleCards, cards} from "./game_logic.js";
+
+/**
+ * @file main.js
+ * @author Niki Kan
+ * @description This file contains parts of the game in order for it to come together.
+ */
+
+/* jslint es6:true, browser:true, module:true */
+const gameBoard = document.getElementById("board");
+let currentPlayer = "p1";
+
+/**
+ * @param {Array} deck - The shuffled array of card image sources.
+ */
+const renderBoard = function (deck) {
+    gameBoard.innerHTML = "";
+    R.forEach(function (src) {
+        const btn = document.createElement("button");
+        btn.className = "card";
+
+        // Flip effect
+        const inner = document.createElement("div");
+        inner.className = "card-inner";
+
+        // Back of card
+        const back = document.createElement("div");
+        back.className = "card-back";
+        back.textContent = "?";
+
+        // Front of card
+        const front = document.createElement("div");
+        front.className = "card-front";
+        const img = document.createElement("img");
+        img.src = src;
+
+        front.appendChild(img);
+        inner.appendChild(back);
+        inner.appendChild(front);
+        btn.appendChild(inner);
+        gameBoard.appendChild(btn);
+    }, deck);
+};
+
+/**
+ * Updates the game state after a non-matching move.
+ */
+const handlePostMove = function () {
+    const c1 = gameState.flippedCards[0];
+    const c2 = gameState.flippedCards[1];
+
+    c1.classList.remove("flipped");
+    c2.classList.remove("flipped");
 
 
-const game = {
-    players: {
-        "1": {
-            color: "#EF4444",
-            el: "player1-score",
-            name: "Player 1",
-            score: 0
-        },
-        "2": {
-            color: "#3B82F6",
-            el: "player2-score",
-            name: "Player 2",
-            score: 0
+    if (currentPlayer === "p1") {
+        currentPlayer = "p2";
+    } else {
+        currentPlayer = "p1";
+    }
+
+    document.body.className = currentPlayer + "-bg";
+    gameState.flippedCards = [];
+};
+
+/**
+ * Checks if two flipped cards match.
+ */
+const checkMatch = function () {
+    const c1 = gameState.flippedCards[0];
+    const c2 = gameState.flippedCards[1];
+
+    if (isMatch(c1.dataset, c2.dataset)) {
+        gameState.scores[currentPlayer] += 1;
+        gameState.flippedCards = [];
+    } else {
+        setTimeout(handlePostMove, 1000);
+    }
+};
+
+/**
+ * Handles the click interaction on a card.
+ */
+const handleCardClick = function (cardEl) {
+    if (gameState.flippedCards.length < 2) {
+        if (!cardEl.classList.contains("flipped")) {
+            cardEl.classList.add("flipped");
+            gameState.flippedCards.push(cardEl);
+            if (gameState.flippedCards.length === 2) {
+                checkMatch();
+            }
         }
-    },
-    state: {
-        activePlayer: 1,
-        flippedCards: [],
-        isLocked: false,
-        matchesFound: 0,
-        totalPairs: 8
     }
 };
 
-const UI = {
-    renderCard: R.curry(function (clickHandler, iconHtml) {
-        var card = document.createElement("div");
-        var html = [
-            "<div class=\"card-inner\">",
-            "<div class=\"card-front\"></div>",
-            "<div class=\"card-back\">", iconHtml, "</div></div>"
-        ];
-        card.className = "card";
-        card.dataset.icon = iconHtml;
-        card.innerHTML = html.join("");
-        card.addEventListener("click", () => clickHandler(card));
-        return card;
-    })
+/**
+ * Initialises the game board.
+ */
+const setupGame = function () {
+    const shuffled = shuffleCards(cards);
+    renderBoard(shuffled);
+
+    gameBoard.addEventListener("click", function (e) {
+        const target = e.target.closest(".card");
+        if (target !== null) {
+            handleCardClick(target);
+        }
+    });
+
+    gameBoard.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+            const target = e.target.closest(".card");
+            if (target !== null) {
+                e.preventDefault();
+                handleCardClick(target);
+            }
+        }
+    });
 };
 
-// --- UI scoring ---
-const updateScoreUI = () => {
-    R.forEach((id) => {
-        const p = game.players[id];
-        const el = document.getElementById(p.el);
-        const activeClass = game.state.activePlayer == id ? `p${id}-active` : "";
-        el.querySelector(".p-score").textContent = p.score;
-        el.className = `score-box ${activeClass}`;
-    }, ["1", "2"]);
-    document.getElementById("turn-display").textContent = `${game.players[game.state.activePlayer].name}'s Turn`;
-};
-
-const showWinner = () => {
-    const p1 = game.players["1"].score;
-    const p2 = game.players["2"].score;
-    const winnerText = p1 === p2 ? "It's a Draw!" : (p1 > p2 ? "Player 1 Wins!":"Player 2 Wins!");
-    document.getElementById("winner-message").textContent = winnerText;
-    document.getElementById("win-modal").classList.remove("hidden");
-};
-
-// --- game logic ---
-const processMatch = () => {
-    const updated = StateManager.addScoreToActive(game.state, game.players);
-    game.state = updated.state;
-    Object.assign(game.players, updated.players);
-    game.state.flippedCards = [];
-    updateScoreUI();
-    if (game.state.matchesFound === game.state.totalPairs) showWinner();
-    game.state.isLocked = false;
-};
-
-const processMismatch = () => {
-    setTimeout(() => {
-        R.forEach((card) => card.classList.remove("flipped"), game.state.flippedCards);
-        game.state.flippedCards = [];
-        game.state = StateManager.switchTurn(game.state);
-        updateScoreUI();
-        game.state.isLocked = false;
-    }, 1000);
-};
-
-const handleCardClick = (card) => {
-    if (game.state.isLocked || card.classList.contains("flipped")) return;
-    card.classList.add("flipped");
-    game.state.flippedCards.push(card);
-    if (game.state.flippedCards.length === 2) {
-        game.state.isLocked = true;
-        const [c1, c2] = game.state.flippedCards;
-        c1.dataset.icon === c2.dataset.icon ? processMatch() : processMismatch();
-    }
-};
-
-// --- set up ---
-document.getElementById("play-btn").addEventListener("click", () => {
-    document.getElementById("start-screen").classList.add("hidden");
-    document.getElementById("game-screen").classList.remove("hidden");
-    const deck = CardAssets.getShuffledDeck();
-    const board = document.getElementById("game-board");
-    R.forEach((icon) => board.appendChild(UI.renderCard(handleCardClick, icon)), deck);
-    updateScoreUI();
-});
-
-export { game, UI };
+setupGame();

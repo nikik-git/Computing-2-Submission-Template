@@ -1,7 +1,21 @@
 # Computing 2 Coursework Submission.
-**CID**: [YOUR CID]
+**CID**: 02569985
 
 This is the submission template for your Computing 2 Applications coursework submission.
+
+### Notes on Code
+The ramda.js file kept having issues with importing, specifically the line stating: import * as R from "ramda.js".
+
+Despite es6 being implements into the Open User Settigs (JSON), as instructed in module guide, export remains an issue for jslint. However, this cannot be detected by jslint without the first error being resolved.
+
+
+
+
+
+
+
+
+
 
 ## Checklist
 ### Install dependencies locally
@@ -50,5 +64,3 @@ I'll run the same commands when I download your repos.
 - [ ] Push to GitHub.
 - [ ] Sync the changes.
 - [ ] Check submission on GitHub website.
-
-02569985

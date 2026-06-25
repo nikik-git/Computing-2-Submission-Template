@@ -9,51 +9,13 @@
   <script type="module" src="main.js"></script> <!-- Load the main script. Must be type="module". Have only one of these -->
 </head>
 
+<!DOCTYPE html>
+<html>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ramda/0.29.1/ramda.min.js"></script>
-    <script src="ramda.js"></script>
-
-        <!-- overlay for when player's turn -->
-    <div id="bg-overlay"></div>
-
-    <!-- start screen -->
-    <div id="start-screen" class="screen">
-        <div class="menu-card">
-            <h1>Memory Match Game</h1>
-            <p>A 2-Player Tactical Showdown</p>
-            <button id="play-btn">Start Game</button>
-        </div>
-    </div>
-
-    <!-- ongoing game screen -->
-    <div id="game-screen" class="screen hidden">
-        
-        <!-- scoreboard and turn indicator -->
-        <header class="game-header">
-            <div class="scoreboard">
-                <div id="player1-score" class="score-box">
-                    <span class="p-name">Player 1</span>
-                    <span class="p-score">0</span>
-                </div>
-                <div id="player2-score" class="score-box">
-                    <span class="p-name">Player 2</span>
-                    <span class="p-score">0</span>
-                </div>
-            </div>
-            <div id="turn-display">Player 1's Turn</div>
-        </header>
-
-        <!-- 8x4 game board grid: guide for cards -->
-        <main id="game-board"></main>
-    </div>
-
-    <!-- winner screen -->
-    <div id="win-modal" class="screen hidden">
-        <div class="modal-content">
-            <h2>Game Over!</h2>
-            <div id="winner-message">Player X Wins!</div>
-            <button onclick="window.location.reload()">Play Again</button>
-        </div>
-    </div>
+  <div id="game-container" style="display: block;">
+    <div id="scoreboard"></div>
+    <div id="board"></div>
+  </div>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
