@@ -5,7 +5,6 @@ const startButton = document.getElementById("start-button");
 const gameBoard = document.getElementById("game-board");
 const startScreen = document.getElementById("start-screen");
 
-const thisGame = {
 const game = {
     players: {
         "1": {
