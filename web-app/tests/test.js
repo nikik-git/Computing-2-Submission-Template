@@ -1,89 +1,103 @@
-/* jslint es6:true, node:true */
-import {initialState, isMatch, shuffleCards} from "./game_logic.js";
+import fc from "fast-check";
+import {CardAssets, StateManager} from "./game_logic.js";
 
 /**
- * A helper to generate random numbers for testing ranges.
- * @param {number} min - Minimum value.
- * @param {number} max - Maximum value.
- * @returns {number} Random integer between min and max.
+ * @property Shuffling should always preserve the same number of elements
+ * and contain the same elements (just in a different order).
  */
-const getRandomInt = function (min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+const testShuffleProperty = function () {
+
+    const shufflePreservesData = function (data) {
+
+        const result = CardAssets.shuffle(data);
+
+        const sameLength = (result.length === data.length);
+        const hasAllElements = result.every(function (item) {
+            return data.includes(item);
+        });
+        return sameLength && hasAllElements;
+    };
+
+
+    fc.assert(
+        fc.property(
+            fc.array(fc.integer()),
+            shufflePreservesData
+        )
+    );
 };
 
 /**
- * Property: Initial state must always contain the correct keys.
+ * @property Swapping the turn twice should
+ * always return to the original player.
  */
-const testInitialState = function () {
-    const state = initialState();
-    const expectedKeys = ["board", "currentPlayer", "scores", "flippedCards"];
 
-    let i = 0;
-    while (i < expectedKeys.length) {
-        if (state[expectedKeys[i]] === undefined) {
-            throw new Error("Missing key: " + expectedKeys[i]);
-        }
-        i = i + 1;
-    }
-    console.log("Passed: initialState structure.");
+const testSwitchTurnProperty = function () {
+
+    const isSwitchTurnInvolutive = function (player) {
+        const state = {activePlayer: player};
+
+        const nextState = StateManager.switchTurn(state);
+        const originalState = StateManager.switchTurn(nextState);
+
+
+        return originalState.activePlayer === player;
+    };
+
+
+    const playerGenerator = fc.oneof(
+        fc.constant(1),
+        fc.constant(2)
+    );
+
+
+    fc.assert(
+        fc.property(playerGenerator, isSwitchTurnInvolutive)
+    );
+
+    console.log("Passed: PBT switchTurn is involutive (toggles back).");
 };
 
 /**
- * Property: isMatch must return true for identical IDs and false for different.
+ * @property Adding a score should always increase the existing score by 1
+ * regardless of what the initial score was.
  */
-const testIsMatch = function () {
-    const cardA = {id: 1};
-    const cardB = {id: 1};
-    const cardC = {id: 2};
+const testScoreIncrementProperty = function () {
+    fc.assert(
+        fc.property(
+            fc.integer({min: 0, max: 1000}), // Any reasonable starting score
+            fc.oneof(fc.constant(1), fc.constant(2)), // Any player
+            function (initialScore, activePlayer) {
+                const mockPlayers = {
+                    "1": {score: 0},
+                    "2": {score: 0}
+                };
+                if (activePlayer === 1) {
+                    mockPlayers["1"].score = initialScore;
+                } else if (activePlayer === 2) {
+                    mockPlayers["2"].score = initialScore;
+                }
 
-    if (isMatch(cardA, cardB) !== true) {
-        throw new Error("Match failed: Identical IDs should match.");
-    }
-    if (isMatch(cardA, cardC) !== false) {
-        throw new Error("Match failed: Different IDs should not match.");
-    }
-    console.log("Passed: isMatch logic.");
+
+                const mockState = {activePlayer: activePlayer};
+
+                const result = StateManager.addScoreToActive(
+                    mockState,
+                    mockPlayers
+                );
+                return result.players[activePlayer].score === initialScore + 1;
+            }
+        )
+    );
+    console.log("Passed: PBT score increment is additive.");
 };
 
-/**
- * Property: shuffleCards must always return an array of the correct size.
- */
-const testShuffleRange = function () {
-    const testRuns = 100;
-    let i = 0;
-
-    while (i < testRuns) {
-        const randomSize = getRandomInt(20, 100);
-        const deck = [];
-        let j = 0;
-
-        while (j < randomSize) {
-            deck.push({id: j});
-            j = j + 1;
-        }
-
-        const result = shuffleCards(deck);
-
-        if (result.length !== 16) {
-            throw new Error("Shuffle failed: Result size is not 16.");
-        }
-        i = i + 1;
-    }
-    console.log("Passed: shuffleCards property range.");
-};
-
-/**
- * Run the tests.
- */
-const runTests = function () {
-    try {
-        testInitialState();
-        testIsMatch();
-        testShuffleRange();
-        console.log("All tests passed successfully!");
-    } catch (error) {
-        console.error("Test failed: " + error.message);
-    }
-};
-
-runTests();
+// Run the suite
+try {
+    testShuffleProperty();
+    testSwitchTurnProperty();
+    testScoreIncrementProperty();
+    console.log("All properties verified successfully!");
+} catch (err) {
+    console.error("Property verification failed:", err);
+}

@@ -17,7 +17,6 @@ const CardAssets = {
 
     shuffle: function (array) {
         const arr = [...array];
-        // Convert the inner arrow function to a standard function
         const swap = function (acc, i) {
             const j = Math.floor(Math.random() * (i + 1));
             const temp = acc[i];

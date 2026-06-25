@@ -17,6 +17,7 @@ Despite es6 being implements into the Open User Settigs (JSON), as instructed in
 
 
 
+
 ## Checklist
 ### Install dependencies locally
 This template relies on a a few packages from the Node Package Manager, npm.
