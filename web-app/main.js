@@ -1,9 +1,7 @@
 import R from "./ramda.js";
-import {CardAssets, handleCardClick} from "./game_logic.js";
+import {CardAssets, handleCardClick, updateUI} from "./game_logic.js";
 
-const startButton = document.getElementById("start-button");
 const gameBoard = document.getElementById("game-board");
-const startScreen = document.getElementById("start-screen");
 
 const game = {
     players: {
@@ -30,15 +28,17 @@ const game = {
 };
 
 const UI = {
-    renderCard: R.curry(function (clickHandler, cardData) {
+    renderCard: R.curry(function (clickHandler, iconPath) {
         const card = document.createElement("div");
         card.className = "card";
         card.tabIndex = 0;
-        card.dataset.icon = cardData.icon;
+        card.dataset.icon = iconPath;
         card.innerHTML = `
             <div class="card-inner">
                 <div class="card-front"></div>
-                <div class="card-back">${cardData.icon}</div>
+                <div class="card-back">
+                    <img src="${iconPath}" class="card-icon" alt="card icon">
+                </div>
             </div>`;
 
         const activateCard = function () {
@@ -62,7 +62,7 @@ const initKeyboardNavigation = function () {
         const index = cards.indexOf(focusedEl);
 
         if (index === -1) {
-            return; // Ignore if no card is focused
+            return;
         }
 
         const cols = 4;
@@ -83,22 +83,17 @@ const initKeyboardNavigation = function () {
 };
 
 const startGame = function () {
-    startScreen.classList.add("hidden");
-    gameBoard.classList.remove("hidden");
-
-    //shuffle the deck and assign it to the game state
     game.state.deck = CardAssets.getShuffledDeck();
 
-    // lear the board for next game
     gameBoard.innerHTML = "";
 
-    // render the cards on the board
     const render = UI.renderCard(handleCardClick);
-    game.state.deck.forEach(function (cardData) {
-        gameBoard.appendChild(render(cardData));
+    game.state.deck.forEach(function (iconPath) {
+        gameBoard.appendChild(render(iconPath));
     });
+
+    updateUI(game);
+    initKeyboardNavigation();
 };
 
-startButton.addEventListener("click", startGame);
-
-export {game, UI, initKeyboardNavigation};
+startGame();
