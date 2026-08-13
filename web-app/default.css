@@ -7,10 +7,76 @@ body {
     background-color: #1e293b;
     color: #f8fafc;
     min-height: 100vh;
-    overflow: hidden;
+    /* Keeps page scrolling */
     display: flex;
     justify-content: center;
+    align-items: flex-start;
+    padding: 2rem 1rem;
+}
+
+/* Layout: Rules panel LEFT | Game content RIGHT */
+.page-wrapper {
+    display: flex;
+    gap: 2.5rem;
+    max-width: 1300px;
+    width: 100%;
+}
+
+/* Game rules sidebar – rules in HTML */
+.rules-sidebar {
+    flex: 0 0 320px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+/* Container holding score header + game board together */
+.game-content-wrapper {
+    display: flex;
     align-items: center;
+    justify-content: center;
+    gap: 2.5rem;
+    padding: 1rem;
+    min-height: 65vh;
+    box-sizing: border-box;
+}
+
+.rules-sidebar {
+    max-width: 300px;
+    padding: 1.2rem;
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+}
+.rules-sidebar a {
+    color: #93c5fd;
+    text-decoration: underline;
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+/* Mobile compatible: stack vertically on narrow screens */
+@media (max-width: 820px) {
+    .game-content-wrapper {
+        flex-direction: column;
+    }
+    .rules-sidebar {
+        max-width: 100%;
+    }
+}
+
+/* Player-coloured card keyboard highlight */
+#game-board.player-1 .card.active {
+    box-shadow: 0 0 0 3px #3B82F6;
+}
+#game-board.player-2 .card.active {
+    box-shadow: 0 0 0 3px #EF4444;
 }
 
 /* --- Background overlay --- */
@@ -73,22 +139,25 @@ button:hover {
     transform: scale(1.05);
 }
 
-/* --- gae screen layout --- */
+/* --- game screen layout --- */
 #game-screen {
     padding: 2rem;
     justify-content: flex-start;
+    position: static;
+    width: 100%;
+    height: auto;
 }
 
 .game-header {
     width: 100%;
-    max-width: 1200px;
+    max-width: 500px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
 }
 
-/* Scoreboard, top left */
+/* Scoreboard */
 .scoreboard {
     display: flex;
     gap: 1rem;
@@ -136,23 +205,55 @@ button:hover {
 
 /* --- THE 4x4 game board--- */
 #game-board {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 15px;
-    width: 90vw;
-    max-width: 650px;
-    height: 65vh;
-    max-height: 650px;
+  width: 65vw;
+  max-width: 500px;
+  min-width: 320px;
+
+  aspect-ratio: 1 / 1; /* force square board 4x4 grid */
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* four equal‑width columns */
+  grid-template-rows: repeat(4, 1fr);
+
+  gap: 10px; /* gap between cards */
+  padding: 5px;
+  box-sizing: border-box; /* padding counts inside width */
 }
 
-/* --- 3D card fliping animation --- */
+/* --- 3D card flipping animation --- */
 .card {
-    perspective: 1000px;
-    cursor: pointer;
-    position: relative;
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
+  transition: transform 0.45s ease;
+  outline: none;
+}
+
+.card:focus-visible {
+    box-shadow: 0 0 0 3px #4299e1;
+}
+
+/* Active card highlight for keyboard navigation */
+.card.active {
+    box-shadow: 0 0 0 3px #FFEA00;
+}
+
+/* For slide animation */
+.card.sliding {
+  transition: transform 0.45s ease;
+  z-index: 20;
+}
+
+
+/* SVG image inside card */
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* preserve svg aspect ratio, no stretching */
+  display: block;
 }
 
 .card-inner {

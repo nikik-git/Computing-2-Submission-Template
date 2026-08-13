@@ -1,45 +1,22 @@
 import R from "./ramda.js";
 /**
  * @file game_logic.js
- * @author Niki
+ * @author Niki Kan
  * @description This file contains the core game logic.
  */
 
-const CardAssets = {
-    iconFiles: [
-        "./assets/Cake.svg", "./assets/Clock.svg", "./assets/Dice.svg",
-        "./assets/Fish.svg", "./assets/Flower.svg", "./assets/Football.svg",
-        "./assets/Ghost.svg", "./assets/Heart.svg", "./assets/Hieroglyphic.svg",
-        "./assets/Images.svg", "./assets/Ladybug.svg", "./assets/Moon.svg",
-        "./assets/Mouse.svg", "./assets/Star.svg", "./assets/Sun.svg",
-        "./assets/Watermelon.svg"
-    ],
-
-    shuffle: function (array) {
-        const arr = [...array];
-        const swap = function (acc, i) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const temp = acc[i];
-            acc[i] = acc[j];
-            acc[j] = temp;
-            return acc;
-        };
-        return R.reduce(swap, arr, R.reverse(R.range(1, arr.length)));
-    },
-
-    getShuffledDeck: function () {
-        return R.pipe(
-            CardAssets.shuffle,
-            R.take(8),
-            function (icons) {
-                return [...icons, ...icons];
-            },
-            CardAssets.shuffle
-        )(CardAssets.iconFiles);
-    }
-};
-
+/**
+ * StateManager contains pure functions to safely update game state
+ * without mutating the original state object.
+ */
 const StateManager = {
+    /**
+     * addScoreToActive function
+     * Increases the active player's score and adds to the total matched pairs.
+     * @param {object} state - current game state object
+     * @param {object} players - player score data
+     * @returns {object} fresh updated state and players object
+     */
     addScoreToActive: function (state, players) {
         return {
             players: R.assoc(
@@ -51,6 +28,13 @@ const StateManager = {
         };
     },
 
+    /**
+     * switchTurn
+     * Toggles active player between player 1 and player 2.
+     * Returns new state object rather than mutating the existing state.
+     * @param {object} state - current game state
+     * @returns {object} state with updated activePlayer
+     */
     switchTurn: function (state) {
         return R.evolve({
             activePlayer: function (active) {
@@ -64,9 +48,17 @@ const StateManager = {
     }
 };
 
+/**
+ * updateUI
+ * Syncs the webpage display to match the current game state.
+ * Updates score text, turn label, active player highlighting background
+ * @param {object} game - combined game object containing players and state
+ */
 const updateUI = function (game) {
-    document.querySelector("#player1-score .p-score").textContent=game.players["1"].score;
-    document.querySelector("#player2-score .p-score").textContent=game.players["2"].score;
+    const p1ScoreEl = document.querySelector("#player1-score .p-score");
+    const p2ScoreEl = document.querySelector("#player2-score .p-score");
+    p1ScoreEl.textContent = game.players["1"].score;
+    p2ScoreEl.textContent = game.players["2"].score;
 
     const p1Box = document.getElementById("player1-score");
     const p2Box = document.getElementById("player2-score");
@@ -86,66 +78,63 @@ const updateUI = function (game) {
     }
 };
 
-const handleCardClick = function (card, game) {
+/**
+ * handleCardClick
+ * Calculates game state changes after a card selection.
+ * Returns outcome data for UI layer in main.js.
+ * @param {object} game - main game object holding players and state
+ * @param {string} cardId - unique identifier string for selected card
+ * @returns {object|null} outcome instruction or null if click is invalid
+ */
+const handleCardClick = function (game, cardId) {
+    // Prevents new selections while game is comparing an existing pair
     if (game.state.isLocked) {
-        return;
-    }
-    if (card.classList.contains("flipped") &&
-    card.classList.contains("matched")) {
-        return;
+        return null;
     }
 
-    card.classList.add("flipped");
-    game.state.flippedCards.push(card);
+    // Prevent selecting the same already flipped card twice
+    if (game.state.flippedCards.includes(cardId)) {
+        return null;
+    }
 
-    if (game.state.flippedCards.length === 2) {
-        game.state.isLocked = true;
-        const [card1, card2] = game.state.flippedCards;
-        const icon1 = card1.dataset.icon;
-        const icon2 = card2.dataset.icon;
+    // Add card to flipped list
+    game.state.flippedCards.push(cardId);
 
-        if (icon1 === icon2) {
-            card1.classList.add("matched");
-            card2.classList.add("matched");
+    // Less than two cards selected -> trigger single flip in UI
+    if (game.state.flippedCards.length < 2) {
+        return {
+            action: "flip_single",
+            cardId: cardId
+        };
+    }
 
-            const updated = StateManager.addScoreToActive(
-                game.state, game.players
-            );
-            game.state = updated.state;
-            game.players = updated.players;
+    game.state.isLocked = true;
+    const [firstId, secondId] = game.state.flippedCards;
+    const icon1 = game.cardLookup[firstId];
+    const icon2 = game.cardLookup[secondId];
 
-            updateUI(game);
-            game.state.flippedCards = [];
-            game.state.isLocked = false;
+    if (icon1 === icon2) {
+        // Two cards match -> update scores and match counter
+        const updated = StateManager.addScoreToActive(game.state, game.players);
+        game.state = updated.state;
+        game.players = updated.players;
 
-            if (game.state.matchesFound === game.state.totalPairs) {
-                const p1Score = game.players["1"].score;
-                const p2Score = game.players["2"].score;
-                const winnerMsg = document.getElementById("winner-message");
-
-                if (p1Score > p2Score) {
-                    winnerMsg.textContent = "Player 1 Wins!";
-                } else if (p2Score > p1Score) {
-                    winnerMsg.textContent = "Player 2 Wins!";
-                } else {
-                    winnerMsg.textContent = "It's a Draw!";
-                }
-
-                document.getElementById("win-modal").classList.remove("hidden");
-            }
-        } else {
-            setTimeout(function () {
-                card1.classList.remove("flipped");
-                card2.classList.remove("flipped");
-
-                game.state = StateManager.switchTurn(game.state);
-                updateUI(game);
-
-                game.state.flippedCards = [];
-                game.state.isLocked = false;
-            }, 1000);
-        }
+        const matchedCount = game.state.matchesFound;
+        const totalPairCount = game.state.totalPairs;
+        const gameComplete = matchedCount === totalPairCount;
+        return {
+            action: "match",
+            cardIds: [firstId, secondId],
+            gameComplete: gameComplete
+        };
+    } else {
+        // Cards do not match -> signal UI to flip back and swap positions
+        game.state = StateManager.switchTurn(game.state);
+        return {
+            action: "no_match_swap",
+            cardIds: [firstId, secondId]
+        };
     }
 };
 
-export {CardAssets, StateManager, handleCardClick, updateUI};
+export {StateManager, handleCardClick, updateUI};

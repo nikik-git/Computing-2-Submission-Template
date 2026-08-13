@@ -1,16 +1,15 @@
-<!doctype html> <!-- This first line tells browsers to expect modern standard html 5 -->
-<html lang="en-gb"> <!-- This is indicates the page is written in British English, useful for accessibility -->
-<meta charset="utf-8"> <!-- This indicates how the file is encoded. utf-8 is standard -->
-<title>Your Web-app Title</title> <!-- All pages need a title, this will be displayed in the browser's title bar -->
-<link rel="stylesheet" href="default.css"> <!-- Import style sheet – default.css -->
-<link rel="icon" href="./assets/favicon.png"> <!-- Import 'Favorites Icon' – favicon.png -->
-<script type="module" src="main.js"></script> <!-- Load the main script. Must be type="module". Have only one of these -->
+<!doctype html>
+<html lang="en-gb">
+<meta charset="utf-8">
+<title>Memory Match</title>
+<link rel="stylesheet" href="default.css">
+<link rel="icon" href="./assets/favicon.png">
+<script type="module" src="main.js"></script>
 
 <body>
     <div id="bg-overlay"></div>
 
     <div id="game-screen" class="screen">
-        
         <header class="game-header">
             <div class="scoreboard">
                 <div id="player1-score" class="score-box p1-active">
@@ -25,7 +24,26 @@
             <div id="turn-display">Player 1's Turn</div>
         </header>
 
-        <main id="game-board"></main>
+        <!-- Horizontal container: rules sidebar left, game grid right, page centered -->
+        <div class="game-content-wrapper">
+            <aside class="rules-sidebar">
+                <h3>Game Rules</h3>
+                <p>1. Tap on a card to turn it over.</p>
+                <p>2. Then, tap another card to find its match.</p>
+                <p>3. If both cards match, you get a point and an extra turn.</p>
+                <p>4. If the cards don't match, your turn ends AND the cards swap positions.</p>
+                <p>5. Try to remember what your cards were.</p>
+                <p>6. The game finishes once all matching pairs have been found.</p>
+                <p>7. The player with the highest score wins and equal scores result in a draw.</p>
+                <p>8. If you have no access to a mouse, WASD keys can be used to navigate the board
+                    and the enter key can be used to flip cards.
+                The yellow highlight indicates the currently selected card with this function,
+                which is only activated when WASD key is clicked.</p>
+                <p><a href="./assets/Rules.svg" target="_blank">Download full rules (SVG)</a></p>
+            </aside>
+
+            <main id="game-board"></main>
+        </div>
     </div>
 
     <div id="win-modal" class="screen hidden">
