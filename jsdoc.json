@@ -4,7 +4,9 @@
     },
     "source": {
         "include": [
-            "web-app/Module.js"
+            "web-app/game_logic.js",
+            "web-app/main.js",
+            "web-app/card_assets.js"
         ],
         "includePattern": "\\.js$",
         "excludePattern": "(node_modules/|docs)"
